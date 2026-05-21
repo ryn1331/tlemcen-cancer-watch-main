@@ -270,6 +270,21 @@ export default function NewCase() {
     ? ICDO3_MORPHOLOGY.filter(m => m.code.includes(morphoSearch) || m.label.toLowerCase().includes(morphoSearch.toLowerCase()))
     : ICDO3_MORPHOLOGY;
 
+  const fieldLabels: Record<string, string> = {
+    nom: 'Nom',
+    prenom: 'Prénom',
+    sexe: 'Sexe',
+    dateDiagnostic: 'Date de diagnostic',
+    typeCancer: 'Type de cancer',
+    methodeDiagnostic: 'Méthode de diagnostic',
+    dateNaissance: 'Date de naissance',
+    topographieIcdo: 'Topographie ICD-O',
+    morphologieIcdo: 'Morphologie ICD-O',
+    codeIcdo: 'Code ICD-O',
+    stadeTnm: 'Stade TNM',
+    resultatAnapath: 'Résultat anapath',
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -284,14 +299,20 @@ export default function NewCase() {
     ] as const;
 
     const missingRequired = requiredFields.filter(field => !field.value.trim()).map(field => field.label);
-    if (missingRequired.length > 0) {
-      toast.error(`Champs requis manquants : ${missingRequired.join(', ')}`);
+    const missingCustomRequired = customFields
+      .filter(field => field.is_required && !(customValues[field.field_name] || '').trim())
+      .map(field => field.field_label);
+
+    const missingAll = [...missingRequired, ...missingCustomRequired];
+    if (missingAll.length > 0) {
+      toast.error(`Champs manquants : ${missingAll.join(', ')}`);
       return;
     }
 
     const criticalErrors = validationErrors.filter(e => e.severity === 'error');
     if (criticalErrors.length > 0) {
-      toast.error(`Validation à corriger : ${criticalErrors.map(err => err.message).join(' · ')}`);
+      const errorFields = [...new Set(criticalErrors.map(err => fieldLabels[err.field] || err.field))];
+      toast.error(`Champs à corriger : ${errorFields.join(', ')}`);
       return;
     }
 
@@ -491,7 +512,7 @@ export default function NewCase() {
         )}
 
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
             <TabsList className="w-full grid grid-cols-7 h-auto gap-1 p-1 bg-muted/50" aria-label="Sections du formulaire de saisie">
               {TABS.map((tab, i) => (
