@@ -372,7 +372,7 @@ export default function PatientTimeline() {
                       ) : (
                         <Dialog open={showDeces} onOpenChange={setShowDeces}>
                           <DialogTrigger asChild>
-                            <Button variant="destructive" size="sm">☠️ Déclarer décédé</Button>
+                            <Button variant="destructive" size="sm">Déclarer décédé</Button>
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
@@ -417,7 +417,7 @@ export default function PatientTimeline() {
                     )}
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4">
-                    <Field label="Statut" value={caseInfo.statut_vital === 'decede' ? '☠️ Décédé' : '💚 Vivant'} />
+                    <Field label="Statut" value={caseInfo.statut_vital === 'decede' ? 'Décédé' : '💚 Vivant'} />
                     <Field label="Date de décès" value={caseInfo.date_deces ? new Date(caseInfo.date_deces).toLocaleDateString('fr-DZ') : null} />
                     <Field label="Cause" value={caseInfo.cause_deces} />
                   </div>
