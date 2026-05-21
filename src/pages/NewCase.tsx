@@ -229,9 +229,6 @@ export default function NewCase() {
     methodeDiagnostic: form.methodeDiagnostic,
   }), [form]);
 
-  const errorCount = validationErrors.filter(e => e.severity === 'error').length;
-  const warningCount = validationErrors.filter(e => e.severity === 'warning').length;
-
   const checkDuplicate = async () => {
     if (!form.nom || !form.prenom) return;
     setDupCheckOpen(true);
@@ -277,17 +274,30 @@ export default function NewCase() {
     e.preventDefault();
     if (!user) return;
 
-    const criticalErrors = validationErrors.filter(e => e.severity === 'error');
-    if (criticalErrors.length > 0) {
-      toast.error(`${criticalErrors.length} erreur(s) de validation à corriger`);
+    const requiredFields = [
+      { key: 'nom', label: 'Nom', value: form.nom },
+      { key: 'prenom', label: 'Prénom', value: form.prenom },
+      { key: 'sexe', label: 'Sexe', value: form.sexe },
+      { key: 'dateDiagnostic', label: 'Date de diagnostic', value: form.dateDiagnostic },
+      { key: 'typeCancer', label: 'Type de cancer', value: form.typeCancer },
+      { key: 'methodeDiagnostic', label: 'Méthode de diagnostic', value: form.methodeDiagnostic },
+    ] as const;
+
+    const missingRequired = requiredFields.filter(field => !field.value.trim()).map(field => field.label);
+    if (missingRequired.length > 0) {
+      toast.error(`Champs requis manquants : ${missingRequired.join(', ')}`);
       return;
     }
 
-    // Zero-tolerance duplicate check before insert
-    if (!linkedPatientId && !forceCreateAllowed && form.nom && form.prenom) {
-      setDupCheckOpen(true);
-      toast.warning('Vérification des doublons requise avant enregistrement');
+    const criticalErrors = validationErrors.filter(e => e.severity === 'error');
+    if (criticalErrors.length > 0) {
+      toast.error(`Validation à corriger : ${criticalErrors.map(err => err.message).join(' · ')}`);
       return;
+    }
+
+    // Optional duplicate workflow: do not block saving a valid case.
+    if (!linkedPatientId && !forceCreateAllowed && form.nom && form.prenom) {
+      setDuplicateWarning(true);
     }
 
     setLoading(true);
@@ -446,21 +456,6 @@ export default function NewCase() {
                 <AlertTriangle size={14} /> Doublons
               </Button>
             )}
-            {(form.nom || form.prenom || form.dateDiagnostic) && errorCount > 0 && (
-              <Badge variant="destructive" className="gap-1">
-                <XCircle size={12} /> {errorCount} erreur(s)
-              </Badge>
-            )}
-            {(form.nom || form.prenom || form.dateDiagnostic) && warningCount > 0 && (
-              <Badge className="bg-warning/10 text-warning border-warning/20 gap-1">
-                <AlertTriangle size={12} /> {warningCount} alerte(s)
-              </Badge>
-            )}
-            {errorCount === 0 && warningCount === 0 && form.nom && (
-              <Badge className="bg-success/10 text-success border-success/20 gap-1">
-                <CheckCircle2 size={12} /> Valide
-              </Badge>
-            )}
           </div>
         </div>
 
@@ -494,9 +489,6 @@ export default function NewCase() {
             </Button>
           </div>
         )}
-
-
-        {/* Validation panel removed per user request */}
 
 
         <form onSubmit={handleSubmit}>
@@ -977,7 +969,7 @@ export default function NewCase() {
                 </Button>
               )}
             </div>
-            <Button type="submit" disabled={loading || errorCount > 0} className="h-11 px-8">
+            <Button type="submit" disabled={loading} className="h-11 px-8">
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Enregistrer le cas
             </Button>
